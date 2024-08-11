@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
+    console.log('Request received:', req.body);
     const { message } = req.body;
 
     if (message && message.text) {
@@ -20,6 +21,7 @@ export default async function handler(req, res) {
           user = await prisma.user.create({
             data: { username },
           });
+          console.log('User created:', user);
         }
 
         // Automatically log the user in by creating a session
@@ -27,6 +29,7 @@ export default async function handler(req, res) {
           redirect: false,
           username: user.username,
         });
+        console.log('User signed in:', user);
 
         // Fetch user's to-do list
         const tasks = await prisma.task.findMany({
@@ -36,6 +39,7 @@ export default async function handler(req, res) {
 
         // Format the tasks for Telegram
         const taskList = tasks.map(task => `- ${task.title}: ${task.description}`).join('\n');
+        console.log('Tasks fetched:', taskList);
 
         // Send a response to Telegram
         await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
