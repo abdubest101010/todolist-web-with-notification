@@ -1,0 +1,17 @@
+[33mcommit 2f6a144e109709211ae60711c1a0469acb32d138[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m
+Author: abdubest101010 <101792283+abdubest101010@users.noreply.github.com>
+Date:   Sun Aug 11 08:51:53 2024 +0300
+
+    Stop tracking .env and .gitignore
+
+[33mcommit a9f2d4d997a4f6a40f0c3b7bd5821cb761a70823[m
+Author: abdubest101010 <101792283+abdubest101010@users.noreply.github.com>
+Date:   Sun Aug 11 08:32:05 2024 +0300
+
+    set user and task commit
+
+[33mcommit b69b3cfc01fd070f5941570ce8c8612ca25418c7[m
+Author: abdubest101010 <101792283+abdubest101010@users.noreply.github.com>
+Date:   Sun Aug 11 08:16:36 2024 +0300
+
+    first
