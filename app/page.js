@@ -1,98 +1,94 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useState, useEffect, useContext } from 'react';
+import { UserContext } from '../context/UserContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
-export default function Home() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+const HomePage = () => {
+  const { username } = useContext(UserContext);
   const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    if (status === 'loading') return;
-
-    if (!session) {
-      router.push('/login');
-      return;
-    }
-
     const fetchTasks = async () => {
+      if (!username) return;
+
       try {
-        const res = await fetch('/api/tasks');
-        if (!res.ok) {
-          throw new Error('Failed to fetch tasks');
+        const response = await fetch(`/api/tasks?username=${username}`);
+        if (response.ok) {
+          const data = await response.json();
+          setTasks(data);
+        } else {
+          console.error('Error fetching tasks:', response.statusText);
         }
-        const tasksData = await res.json();
-        setTasks(tasksData);
       } catch (error) {
-        console.error('Error fetching tasks:', error.message);
+        console.error('Error fetching tasks:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchTasks();
-  }, [session, status, router]);
+  }, [username]);
 
-  const deleteTask = async (id) => {
+  const handleDelete = async (id) => {
     try {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const response = await fetch(`/api/tasks/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
       });
-      if (res.ok) {
-        setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
+
+      if (response.ok) {
+        setTasks(tasks.filter(task => task.id !== id));
       } else {
-        const data = await res.json();
-        console.error('Error deleting task:', data.message);
+        console.error('Error deleting task');
       }
     } catch (error) {
-      console.error('Error occurred:', error.message);
+      console.error('Error deleting task:', error);
     }
   };
 
-  if (status === 'loading') {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
+  if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="container mx-auto p-4 min-h-screen flex flex-col items-center">
-      <div className="w-full max-w-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">Your Tasks</h1>
-          <button
-            onClick={() => router.push('/add-task')}
-            className="px-4 py-2 text-white bg-green-500 rounded hover:bg-green-600"
-          >
-            Add Task
-          </button>
-        </div>
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Your Tasks</h1>
+        <Link href="/add-task" className="bg-blue-500 text-white px-4 py-2 rounded">
+          Add New Task
+        </Link>
+      </div>
+      {tasks.length > 0 ? (
         <ul className="space-y-4">
-          {tasks.map((task) => (
-            <li key={task.id} className="p-4 bg-white shadow-md rounded-md">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-semibold">{task.title}</h2>
-                  <p className="text-gray-600">{task.description}</p>
-                  <p className="text-gray-400 text-sm">{new Date(task.scheduledAt).toLocaleString()}</p>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => router.push(`/update-task/${task.id}`)}
-                    className="px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600"
-                  >
-                    Update
-                  </button>
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    className="px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
+          {tasks.map(task => (
+            <li key={task.id} className="border p-4 rounded">
+              <h2 className="text-xl font-semibold">{task.title}</h2>
+              <p className="text-gray-700">{task.description}</p>
+              <p className="text-gray-500">Scheduled at: {new Date(task.scheduledAt).toLocaleString()}</p>
+              <div className="mt-2">
+                <Link href={`/update-task/${task.id}`} className="bg-yellow-500 text-white px-4 py-2 rounded mr-2">
+                  Update
+                </Link>
+                <button
+                  onClick={() => handleDelete(task.id)}
+                  className="bg-red-500 text-white px-4 py-2 rounded"
+                >
+                  Delete
+                </button>
               </div>
             </li>
           ))}
         </ul>
-      </div>
+      ) : (
+        <p>You didn't provide any tasks yet</p>
+      )}
     </div>
   );
-}
+};
+
+export default HomePage;

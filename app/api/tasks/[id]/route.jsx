@@ -1,45 +1,59 @@
-import prisma from '@/prisma/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
+import prisma from '@/prisma/client';
 
-// GET: Retrieve a specific task by ID (optional if you want to keep it)
-export async function GET(request, { params }) {
+export async function GET(request) {
+  const url = new URL(request.url);
+  const id = url.pathname.split('/').pop();
+  const username = url.searchParams.get('username');
+
+  if (!username) {
+    return NextResponse.json({ error: 'Username is required' }, { status: 400 });
+  }
+
   try {
-    const { id } = params;
+    const user = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
     const task = await prisma.task.findUnique({
-      where: { id: Number(id) },
+      where: { id: parseInt(id), userId: user.id }
     });
 
     if (!task) {
-      return NextResponse.json({ message: 'Task not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
     return NextResponse.json(task);
   } catch (error) {
-    console.error('Error fetching task:', error);
-    return NextResponse.json({ message: 'Error fetching task', error: error.message }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// PUT: Update an existing task
-export async function PUT(request, { params }) {
+export async function PUT(request) {
+  const url = new URL(request.url);
+  const id = url.pathname.split('/').pop();
+  const { title, description, scheduledAt, username } = await request.json();
+
+  if (!username || !title || !description || !scheduledAt) {
+    return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const user = await prisma.user.findUnique({
+      where: { username }
+    });
 
-    const { id } = params;
-    const { title, description, scheduledAt } = await request.json();
-
-    if (!title || !description || !scheduledAt) {
-      return NextResponse.json({ message: 'All fields are required' }, { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const task = await prisma.task.update({
-      where: { id: Number(id) },
+      where: { id: parseInt(id) },
       data: {
         title,
         description,
@@ -49,28 +63,23 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json(task);
   } catch (error) {
-    console.error('Error updating task:', error);
-    return NextResponse.json({ message: 'Error updating task', error: error.message }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// DELETE: Delete a specific task by ID
-export async function DELETE(request, { params }) {
+export async function DELETE(request) {
+  const url = new URL(request.url);
+  const id = url.pathname.split('/').pop();
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = params;
-
-    const task = await prisma.task.delete({
-      where: { id: Number(id) },
+    await prisma.task.delete({
+      where: { id: parseInt(id) }
     });
 
-    return NextResponse.json(task);
+    return NextResponse.json({ message: 'Task deleted' }, { status: 200 });
   } catch (error) {
-    console.error('Error deleting task:', error);
-    return NextResponse.json({ message: 'Error deleting task', error: error.message }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

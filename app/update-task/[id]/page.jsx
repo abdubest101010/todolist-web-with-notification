@@ -1,112 +1,114 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useEffect, useContext } from 'react';
 
-export default function UpdateTask() {
+import { useRouter } from 'next/navigation';
+import { UserContext } from '@/context/UserContext';
+
+const UpdateTaskPage = ({ params }) => {
+  const { username } = useContext(UserContext);
+  const [task, setTask] = useState(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [scheduledAt, setScheduledAt] = useState('');
   const router = useRouter();
-  const { id } = useParams();
-  const [task, setTask] = useState({ title: '', description: '', scheduledAt: '' });
-  const [error, setError] = useState('');
-  const [isFetching, setIsFetching] = useState(true);
-  
+  const { id } = params;
 
   useEffect(() => {
     const fetchTask = async () => {
       try {
-        const res = await fetch(`/api/tasks/${id}`);
-        if (!res.ok) {
-          throw new Error(`Failed to fetch task: ${res.statusText}`);
+        const response = await fetch(`/api/tasks/${id}?username=${username}`);
+        if (response.ok) {
+          const data = await response.json();
+          setTask(data);
+          setTitle(data.title);
+          setDescription(data.description);
+          setScheduledAt(new Date(data.scheduledAt).toISOString().slice(0, 16));
+        } else {
+          console.error('Error fetching task:', response.statusText);
         }
-        const data = await res.json();
-        setTask({
-          title: data.title,
-          description: data.description,
-          scheduledAt: new Date(data.scheduledAt).toISOString().slice(0, 16),
-        });
       } catch (error) {
-        setError('An error occurred: ' + error.message);
-      } finally {
-        setIsFetching(false);
+        console.error('Error fetching task:', error);
       }
     };
+
     fetchTask();
-  }, [id]);
+  }, [id, username]);
 
-  const handleSubmit = async (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
-    setError('');
 
-    if (!task.title || !task.description || !task.scheduledAt) {
-      setError('All fields are required');
+    if (!username) {
+      console.error('Username is not set');
       return;
     }
 
     try {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const response = await fetch(`/api/tasks/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(task),
+        body: JSON.stringify({ title, description, scheduledAt, username }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.message || 'Failed to update task');
+
+      if (response.ok) {
+        router.push('/'); // Redirect to homepage or tasks list
       } else {
-        setTask({ title: '', description: '', scheduledAt: '' });
-        router.push('/');
+        console.error('Error updating task:', response.statusText);
       }
     } catch (error) {
-      setError('An error occurred: ' + error.message);
+      console.error('Error updating task:', error);
     }
   };
 
-  if (isFetching) {
-    return <div>Loading...</div>;
-  }
+  if (!task) return <p>Loading...</p>;
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="w-full max-w-md mx-auto bg-white p-6 shadow-md rounded-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">Update Task</h1>
-        <h2 className="text-center mb-4">Current title: <strong>{task.title}</strong></h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Title</label>
-            <input
-              type="text"
-              onChange={(e) => setTask({ ...task, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              onChange={(e) => setTask({ ...task, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Scheduled At</label>
-            <input
-              type="datetime-local"
-              onChange={(e) => setTask({ ...task, scheduledAt: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Update Task
-          </button>
-        </form>
-      </div>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Update Task</h1>
+      <form onSubmit={handleUpdate} className="space-y-4">
+        <div>
+          <label htmlFor="title" className="block mb-2">Title</label>
+          <input
+            type="text"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="border p-2 rounded w-full"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="description" className="block mb-2">Description</label>
+          <textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="border p-2 rounded w-full"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="scheduledAt" className="block mb-2">Scheduled At</label>
+          <input
+            type="datetime-local"
+            id="scheduledAt"
+            value={scheduledAt}
+            onChange={(e) => setScheduledAt(e.target.value)}
+            className="border p-2 rounded w-full"
+            required
+          />
+        </div>
+        <button
+          type="submit"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Update Task
+        </button>
+      </form>
     </div>
   );
-}
+};
+
+export default UpdateTaskPage;

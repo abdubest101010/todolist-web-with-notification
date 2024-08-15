@@ -1,64 +1,67 @@
-import prisma from '@/prisma/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
+import prisma from '@/prisma/client';
 
-// GET: Retrieve tasks for the logged-in user
 export async function GET(request) {
+  const url = new URL(request.url);
+  const username = url.searchParams.get('username');
+
+  if (!username) {
+    return NextResponse.json({ error: 'Username is required' }, { status: 400 });
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const userId = session.user.id;
-
-    const tasks = await prisma.task.findMany({
-      where: { userId: userId },
-      orderBy: {
-        createdAt: 'desc', 
-      },
+    let user = await prisma.user.findUnique({
+      where: { username }
     });
 
-    if (!tasks.length) {
-      return NextResponse.json({ message: 'No tasks found' }, { status: 404 });
+    if (!user) {
+      user = await prisma.user.create({
+        data: { username }
+      });
     }
+
+    const tasks = await prisma.task.findMany({
+      where: { userId: user.id },
+      orderBy: { scheduledAt: 'asc' }
+    });
 
     return NextResponse.json(tasks);
   } catch (error) {
-    console.error('Error fetching tasks:', error);
-    return NextResponse.json({ message: 'Error fetching tasks', error: error.message }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// POST: Create a new task
 export async function POST(request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const { title, description, scheduledAt, username } = await request.json();
+
+    if (!username || !title || !description || !scheduledAt) {
+      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
 
-    const { title, description, scheduledAt } = await request.json();
+    let user = await prisma.user.findUnique({
+      where: { username }
+    });
 
-    if (!title || !description || !scheduledAt) {
-      return NextResponse.json({ message: 'All fields are required' }, { status: 400 });
+    if (!user) {
+      user = await prisma.user.create({
+        data: { username }
+      });
     }
-
-    const userId = session.user.id;
 
     const newTask = await prisma.task.create({
       data: {
         title,
         description,
         scheduledAt: new Date(scheduledAt),
-        userId,
+        userId: user.id,
       },
     });
 
-    return NextResponse.json(newTask);
+    return NextResponse.json(newTask, { status: 201 });
   } catch (error) {
-    console.error('Error creating task:', error);
-    return NextResponse.json({ message: 'Error creating task', error: error.message }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
