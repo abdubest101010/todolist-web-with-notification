@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from "react";
 
-import { useRouter } from 'next/navigation';
-import { UserContext } from '@/context/UserContext';
+import { useRouter } from "next/navigation";
+import { UserContext } from "@/context/UserContext";
 
 const UpdateTaskPage = ({ params }) => {
   const { username } = useContext(UserContext);
   const [task, setTask] = useState(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [scheduledAt, setScheduledAt] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
   const router = useRouter();
   const { id } = params;
 
@@ -25,10 +25,10 @@ const UpdateTaskPage = ({ params }) => {
           setDescription(data.description);
           setScheduledAt(new Date(data.scheduledAt).toISOString().slice(0, 16));
         } else {
-          console.error('Error fetching task:', response.statusText);
+          console.error("Error fetching task:", response.statusText);
         }
       } catch (error) {
-        console.error('Error fetching task:', error);
+        console.error("Error fetching task:", error);
       }
     };
 
@@ -39,26 +39,26 @@ const UpdateTaskPage = ({ params }) => {
     e.preventDefault();
 
     if (!username) {
-      console.error('Username is not set');
+      console.error("Username is not set");
       return;
     }
 
     try {
       const response = await fetch(`/api/tasks/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ title, description, scheduledAt, username }),
       });
 
       if (response.ok) {
-        router.push('/'); // Redirect to homepage or tasks list
+        router.push("/"); // Redirect to homepage or tasks list
       } else {
-        console.error('Error updating task:', response.statusText);
+        console.error("Error updating task:", response.statusText);
       }
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error("Error updating task:", error);
     }
   };
 
@@ -69,7 +69,9 @@ const UpdateTaskPage = ({ params }) => {
       <h1 className="text-2xl font-bold mb-4">Update Task</h1>
       <form onSubmit={handleUpdate} className="space-y-4">
         <div>
-          <label htmlFor="title" className="block mb-2">Title</label>
+          <label htmlFor="title" className="block mb-2">
+            Title
+          </label>
           <input
             type="text"
             id="title"
@@ -80,7 +82,9 @@ const UpdateTaskPage = ({ params }) => {
           />
         </div>
         <div>
-          <label htmlFor="description" className="block mb-2">Description</label>
+          <label htmlFor="description" className="block mb-2">
+            Description
+          </label>
           <textarea
             id="description"
             value={description}
@@ -90,7 +94,9 @@ const UpdateTaskPage = ({ params }) => {
           />
         </div>
         <div>
-          <label htmlFor="scheduledAt" className="block mb-2">Scheduled At</label>
+          <label htmlFor="scheduledAt" className="block mb-2">
+            Scheduled At
+          </label>
           <input
             type="datetime-local"
             id="scheduledAt"
