@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { FcTodoList } from "react-icons/fc";
 
-import { useContext } from "react";
-import { UserContext } from "@/context/UserContext";
+
+
+import { useTelegram } from "@/lib/TelegramProvider";
+
 
 const Navbar = () => {
-  const { username } = useContext(UserContext);
+  const { username } = useTelegram();
 
   return (
     <nav className="bg-gradient-to-r from-blue-600 to-teal-500 py-4 shadow-md">

@@ -1,6 +1,4 @@
-// app/layout.js
 import { TelegramProvider } from "../lib/TelegramProvider";
-import { UserProvider } from "../context/UserContext";
 import "./globals.css"; // Import your global styles if any
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -15,11 +13,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <TelegramProvider>
-          <UserProvider>
-            <Navbar />
-            <main>{children}</main>
-            <Footer />
-          </UserProvider>
+          <Navbar />
+          <main>{children}</main>
+          <Footer />
         </TelegramProvider>
       </body>
     </html>

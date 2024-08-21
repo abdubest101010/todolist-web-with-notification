@@ -1,13 +1,12 @@
 'use client';
 import Script from 'next/script';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { useUser } from '@/context/UserContext';
 
 export const TelegramContext = createContext();
 
 export const TelegramProvider = ({ children }) => {
   const [webApp, setWebApp] = useState(null);
-  const { setUsername } = useUser();
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
     const app = window.Telegram?.WebApp;
@@ -48,14 +47,15 @@ export const TelegramProvider = ({ children }) => {
   const value = useMemo(() => {
     return {
       webApp,
+      username,
     };
-  }, [webApp]);
+  }, [webApp, username]);
 
   return (
     <TelegramContext.Provider value={value}>
       <Script
-        src='https://telegram.org/js/telegram-web-app.js'
-        strategy='beforeInteractive'
+        src="https://telegram.org/js/telegram-web-app.js"
+        strategy="beforeInteractive"
       />
       {children}
     </TelegramContext.Provider>

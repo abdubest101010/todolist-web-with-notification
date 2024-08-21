@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 
 import { useRouter } from "next/navigation";
-import { UserContext } from "@/context/UserContext";
+
+import { useTelegram } from "@/lib/TelegramProvider";
 
 const UpdateTaskPage = ({ params }) => {
-  const { username } = useContext(UserContext);
+  const { username } = useTelegram();
   const [task, setTask] = useState(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

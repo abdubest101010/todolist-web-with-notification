@@ -1,16 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useContext } from "react";
-
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { UserContext } from "@/context/UserContext";
-
-
-
+import { useState, useEffect } from 'react';
+import { useTelegram } from '@/lib/TelegramProvider';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const HomePage = () => {
-  const { username } = useContext(UserContext);
+  const { username } = useTelegram();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -25,10 +21,10 @@ const HomePage = () => {
           const data = await response.json();
           setTasks(data);
         } else {
-          console.error("Error fetching tasks:", response.statusText);
+          console.error('Error fetching tasks:', response.statusText);
         }
       } catch (error) {
-        console.error("Error fetching tasks:", error);
+        console.error('Error fetching tasks:', error);
       } finally {
         setLoading(false);
       }
@@ -40,20 +36,19 @@ const HomePage = () => {
   const handleDelete = async (id) => {
     try {
       const response = await fetch(`/api/tasks/${id}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id }),
       });
 
       if (response.ok) {
         setTasks(tasks.filter((task) => task.id !== id));
       } else {
-        console.error("Error deleting task");
+        console.error('Error deleting task');
       }
     } catch (error) {
-      console.error("Error deleting task:", error);
+      console.error('Error deleting task:', error);
     }
   };
 
@@ -97,7 +92,7 @@ const HomePage = () => {
           ))}
         </ul>
       ) : (
-        <p>You didn't provide any tasks yet</p>
+        <p>You haven't provided any tasks yet</p>
       )}
     </div>
   );

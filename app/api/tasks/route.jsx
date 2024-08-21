@@ -10,24 +10,21 @@ export async function GET(request) {
   }
 
   try {
-    let user = await prisma.user.findUnique({
-      where: { username }
+    const user = await prisma.user.findUnique({
+      where: { username },
     });
 
     if (!user) {
-      user = await prisma.user.create({
-        data: { username }
-      });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const tasks = await prisma.task.findMany({
       where: { userId: user.id },
-      orderBy: { scheduledAt: 'asc' }
+      orderBy: { scheduledAt: 'asc' },
     });
 
     return NextResponse.json(tasks);
   } catch (error) {
-    console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -40,14 +37,12 @@ export async function POST(request) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
 
-    let user = await prisma.user.findUnique({
-      where: { username }
+    const user = await prisma.user.findUnique({
+      where: { username },
     });
 
     if (!user) {
-      user = await prisma.user.create({
-        data: { username }
-      });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const newTask = await prisma.task.create({
@@ -61,7 +56,6 @@ export async function POST(request) {
 
     return NextResponse.json(newTask, { status: 201 });
   } catch (error) {
-    console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

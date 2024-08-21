@@ -1,10 +1,11 @@
 "use client";
 
-import { useContext, useState } from "react";
-import { UserContext } from "@/context/UserContext";
+import {  useState } from "react";
+
+import { useTelegram } from "@/lib/TelegramProvider";
 
 const AddTaskPage = () => {
-  const { username } = useContext(UserContext);
+  const { username } = useTelegram();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");

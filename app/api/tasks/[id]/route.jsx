@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/prisma/client';
 
-export async function GET(request) {
+export async function GET(request, { params }) {
+  const { id } = params;
   const url = new URL(request.url);
-  const id = url.pathname.split('/').pop();
   const username = url.searchParams.get('username');
 
   if (!username) {
@@ -12,7 +12,7 @@ export async function GET(request) {
 
   try {
     const user = await prisma.user.findUnique({
-      where: { username }
+      where: { username },
     });
 
     if (!user) {
@@ -20,7 +20,7 @@ export async function GET(request) {
     }
 
     const task = await prisma.task.findUnique({
-      where: { id: parseInt(id), userId: user.id }
+      where: { id: Number(id), userId: user.id },
     });
 
     if (!task) {
@@ -29,14 +29,12 @@ export async function GET(request) {
 
     return NextResponse.json(task);
   } catch (error) {
-    console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-export async function PUT(request) {
-  const url = new URL(request.url);
-  const id = url.pathname.split('/').pop();
+export async function PUT(request, { params }) {
+  const { id } = params;
   const { title, description, scheduledAt, username } = await request.json();
 
   if (!username || !title || !description || !scheduledAt) {
@@ -52,8 +50,8 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const task = await prisma.task.update({
-      where: { id: parseInt(id) },
+    const updatedTask = await prisma.task.update({
+      where: { id: parseInt(id), userId: user.id },
       data: {
         title,
         description,
@@ -61,16 +59,15 @@ export async function PUT(request) {
       },
     });
 
-    return NextResponse.json(task);
+    return NextResponse.json(updatedTask);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-export async function DELETE(request) {
-  const url = new URL(request.url);
-  const id = url.pathname.split('/').pop();
+export async function DELETE(request, { params }) {
+  const { id } = params;
 
   try {
     await prisma.task.delete({
