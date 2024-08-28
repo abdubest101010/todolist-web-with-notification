@@ -55,12 +55,12 @@ const HomePage = () => {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="p-4">
+    <div className="p-4 "> 
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Your Tasks</h1>
+        <h1 className="text-xl font-bold">Your Tasks</h1>
         <Link
           href="/add-task"
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="bg-blue-500 text-white px-4 py-2 rounded text-lg"
         >
           Add New Task
         </Link>
@@ -68,22 +68,27 @@ const HomePage = () => {
       {tasks.length > 0 ? (
         <ul className="space-y-4">
           {tasks.map((task) => (
-            <li key={task.id} className="border p-4 rounded">
-              <h2 className="text-xl font-semibold">{task.title}</h2>
-              <p className="text-gray-700">{task.description}</p>
-              <p className="text-gray-500">
-                Scheduled at: {new Date(task.scheduledAt).toLocaleString()}
-              </p>
-              <div className="mt-2">
+            <li
+              key={task.id}
+              className="border p-4 rounded shadow-sm bg-white flex flex-col justify-between"
+            >
+              <div>
+                <h2 className="text-2xl font-semibold">Title : {task.title}</h2>
+                <p className="text-gray-700 text-xl">Description : {task.description}</p>
+                <p className="text-gray-500 text-xl">
+                  Scheduled at : {new Date(task.scheduledAt).toLocaleString()}
+                </p>
+              </div>
+              <div className="flex justify-end space-x-2 mt-4"> {/* Aligning buttons at the bottom right */}
                 <Link
                   href={`/update-task/${task.id}`}
-                  className="bg-yellow-500 text-white px-4 py-2 rounded mr-2"
+                  className="bg-yellow-500 text-white px-4 py-2 rounded text-lg flex items-center justify-center" // Centered text
                 >
                   Update
                 </Link>
                 <button
                   onClick={() => handleDelete(task.id)}
-                  className="bg-red-500 text-white px-4 py-2 rounded"
+                  className="bg-red-500 text-white px-4 py-2 rounded text-lg flex items-center justify-center" // Centered text
                 >
                   Delete
                 </button>
@@ -92,7 +97,7 @@ const HomePage = () => {
           ))}
         </ul>
       ) : (
-        <p>You haven't provided any tasks yet</p>
+        <p>No tasks available</p>
       )}
     </div>
   );

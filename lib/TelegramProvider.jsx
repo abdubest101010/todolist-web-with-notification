@@ -1,4 +1,5 @@
-'use client';
+"use client";
+
 import Script from 'next/script';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
@@ -7,16 +8,18 @@ export const TelegramContext = createContext();
 export const TelegramProvider = ({ children }) => {
   const [webApp, setWebApp] = useState(null);
   const [username, setUsername] = useState('');
+  const [telegramChatId, setTelegramChatId] = useState('');
 
   useEffect(() => {
     const app = window.Telegram?.WebApp;
     if (app) {
       app.ready();
       setWebApp(app);
-      const user = app.initDataUnsafe.user;
-      if (user && user.username) {
-        setUsername(user.username);
-        registerUser(user);
+      const user = app.initDataUnsafe?.user;
+      if (user) {
+        setUsername(user.username || '');
+        setTelegramChatId(user.id?.toString() || ''); // Convert user ID to string for consistency
+        registerUser(user.username, user.id?.toString());
       } else {
         console.error('Telegram user data is missing or incomplete:', user);
       }
@@ -25,14 +28,17 @@ export const TelegramProvider = ({ children }) => {
     }
   }, []);
 
-  const registerUser = async (user) => {
+  const registerUser = async (username, chatId) => {
     try {
       const response = await fetch('/api/telegram', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ user }),
+        body: JSON.stringify({ 
+          username, 
+          chatId,
+        }),
       });
       if (!response.ok) {
         throw new Error('Failed to register user');
@@ -48,8 +54,9 @@ export const TelegramProvider = ({ children }) => {
     return {
       webApp,
       username,
+      telegramChatId,
     };
-  }, [webApp, username]);
+  }, [webApp, username, telegramChatId]);
 
   return (
     <TelegramContext.Provider value={value}>

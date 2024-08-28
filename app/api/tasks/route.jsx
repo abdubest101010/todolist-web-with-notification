@@ -25,16 +25,17 @@ export async function GET(request) {
 
     return NextResponse.json(tasks);
   } catch (error) {
+    console.error('Internal Server Error in GET:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
-    const { title, description, scheduledAt, username } = await request.json();
+    const { title, description, scheduledAt, username, telegramChatId } = await request.json();
 
-    if (!username || !title || !description || !scheduledAt) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+    if (!username || !title || !scheduledAt || !telegramChatId) {
+      return NextResponse.json({ error: 'Title, scheduledAt, username, and telegramChatId are required' }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -49,13 +50,41 @@ export async function POST(request) {
       data: {
         title,
         description,
+        createdAt: new Date(),
         scheduledAt: new Date(scheduledAt),
         userId: user.id,
+        telegramChatId, // Use the telegramChatId from the request
       },
     });
+     console.log(newTask)
+     const scheduledTime = new Date(scheduledAt).getTime();
+     const currentTime = new Date().getTime();
+     console.log(scheduledTime, "sch")
+     console.log(currentTime)
+    const webhookUrl = process.env.MAKE_WEBHOOK_URL;
+    if (!webhookUrl) {
+      throw new Error('MAKE_WEBHOOK_URL environment variable is not set');
+    }
 
-    return NextResponse.json(newTask, { status: 201 });
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
+        title,
+        description,
+        telegramChatId, 
+        scheduledAt,
+      }),
+    });
+
+    return NextResponse.json({ 
+      ...newTask, 
+      telegramChatId 
+    }, { status: 201 });
+    
   } catch (error) {
+    console.error('Internal Server Error in POST:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

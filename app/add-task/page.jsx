@@ -1,20 +1,26 @@
 "use client";
 
-import {  useState } from "react";
-
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTelegram } from "@/lib/TelegramProvider";
 
 const AddTaskPage = () => {
-  const { username } = useTelegram();
+  const { username, telegramChatId } = useTelegram();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
 
-    if (!username) {
-      console.error("Username is not set");
+    if (!username || !telegramChatId) {
+      setError("Username or Telegram Chat ID is not set");
+      setLoading(false);
       return;
     }
 
@@ -24,16 +30,25 @@ const AddTaskPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ title, description, scheduledAt, username }),
+        body: JSON.stringify({ 
+          title, 
+          description, 
+          scheduledAt, 
+          username,
+          telegramChatId, // Include telegramChatId in the request body
+        }),
       });
 
       if (response.ok) {
-        window.location.href = "/"; // Redirect to homepage or tasks list
+        router.push("/"); 
       } else {
-        console.error("Error adding task:", response.statusText);
+        const errorData = await response.json();
+        setError(errorData.error || response.statusText);
       }
     } catch (error) {
-      console.error("Error adding task:", error);
+      setError("Error adding task: " + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -84,13 +99,20 @@ const AddTaskPage = () => {
             value={scheduledAt}
             onChange={(e) => setScheduledAt(e.target.value)}
             className="border p-2 rounded w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            required
           />
         </div>
+        {error && (
+          <div className="text-red-500 mb-4">
+            {error}
+          </div>
+        )}
         <button
           type="submit"
           className="bg-blue-500 text-white px-4 py-2 rounded w-full hover:bg-blue-600 transition-colors duration-300"
+          disabled={loading}
         >
-          Add Task
+          {loading ? "Adding..." : "Add Task"}
         </button>
       </form>
     </div>

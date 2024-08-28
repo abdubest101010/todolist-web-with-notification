@@ -4,8 +4,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Your App Title",
-  description: "A description of your app",
+  title: "A todolist web app",
+  description: "A todolist web app with notification",
 };
 
 export default function RootLayout({ children }) {
@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
       <body>
         <TelegramProvider>
           <Navbar />
-          <main>{children}</main>
+          <main className="bg-white">{children}</main>
           <Footer />
         </TelegramProvider>
       </body>
