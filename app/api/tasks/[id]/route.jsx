@@ -2,21 +2,21 @@ import { NextResponse } from 'next/server';
 import prisma from '@/prisma/client';
 
 export async function GET(request, { params }) {
-  const { id } = params;
-  const idNumber = parseInt(id, 10);
-
-  if (isNaN(idNumber)) {
-    return NextResponse.json({ error: 'Invalid Task ID' }, { status: 400 });
-  }
-
-  const url = new URL(request.url);
-  const username = url.searchParams.get('username');
-
-  if (!username) {
-    return NextResponse.json({ error: 'Username is required' }, { status: 400 });
-  }
-
   try {
+    const { id } = params;
+    const idNumber = parseInt(id, 10);
+
+    if (isNaN(idNumber)) {
+      return NextResponse.json({ error: 'Invalid Task ID' }, { status: 400 });
+    }
+
+    const url = new URL(request.url);
+    const username = url.searchParams.get('username');
+
+    if (!username) {
+      return NextResponse.json({ error: 'Username is required' }, { status: 400 });
+    }
+
     const user = await prisma.user.findUnique({
       where: { username },
     });
@@ -26,10 +26,7 @@ export async function GET(request, { params }) {
     }
 
     const task = await prisma.task.findFirst({
-      where: {
-        id: idNumber,
-        userId: user.id,
-      },
+      where: { id: idNumber, userId: user.id },
     });
 
     if (!task) {
@@ -44,25 +41,25 @@ export async function GET(request, { params }) {
 }
 
 export async function PUT(request, { params }) {
-  const { id } = params;
-  const idNumber = parseInt(id, 10);
-
-  if (isNaN(idNumber)) {
-    return NextResponse.json({ error: 'Invalid Task ID' }, { status: 400 });
-  }
-
-  const { title, description, scheduledAt, username } = await request.json();
-
-  if (!username || !title || !description || !scheduledAt) {
-    return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
-  }
-
-  const parsedDate = new Date(scheduledAt);
-  if (isNaN(parsedDate.getTime())) {
-    return NextResponse.json({ error: 'Invalid scheduledAt date' }, { status: 400 });
-  }
-
   try {
+    const { id } = params;
+    const idNumber = parseInt(id, 10);
+
+    if (isNaN(idNumber)) {
+      return NextResponse.json({ error: 'Invalid Task ID' }, { status: 400 });
+    }
+
+    const { title, description, scheduledAt, username } = await request.json();
+
+    if (!username || !title || !description || !scheduledAt) {
+      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+    }
+
+    const parsedDate = new Date(scheduledAt);
+    if (isNaN(parsedDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid scheduledAt date' }, { status: 400 });
+    }
+
     const user = await prisma.user.findUnique({
       where: { username },
     });
@@ -88,14 +85,14 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const { id } = params;
-  const idNumber = parseInt(id, 10);
-
-  if (isNaN(idNumber)) {
-    return NextResponse.json({ error: 'Invalid Task ID' }, { status: 400 });
-  }
-
   try {
+    const { id } = params;
+    const idNumber = parseInt(id, 10);
+
+    if (isNaN(idNumber)) {
+      return NextResponse.json({ error: 'Invalid Task ID' }, { status: 400 });
+    }
+
     await prisma.task.delete({
       where: { id: idNumber },
     });
