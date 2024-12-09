@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -22,6 +22,5 @@ model Task {
   scheduledAt    DateTime
   userId         Int
   user           User     @relation(fields: [userId], references: [id])
-  telegramChatId String?   // Make this field required again
+  telegramChatId String? // Make this field required again
 }
-

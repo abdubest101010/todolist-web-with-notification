@@ -1,6 +1,1 @@
-{
-  "/page": "app/page.js",
-  "/api/telegram/route": "app/api/telegram/route.js",
-  "/api/tasks/route": "app/api/tasks/route.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js"
-}
+{}

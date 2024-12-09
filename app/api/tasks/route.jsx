@@ -62,21 +62,37 @@ export async function POST(request) {
      console.log(scheduledTime, "sch")
      console.log(currentTime)
     const webhookUrl = process.env.MAKE_WEBHOOK_URL;
+    console.log('Webhook URL being used:', webhookUrl);
+
     if (!webhookUrl) {
       throw new Error('MAKE_WEBHOOK_URL environment variable is not set');
     }
 
-    await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username,
-        title,
-        description,
-        telegramChatId, 
-        scheduledAt,
-      }),
-    });
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          title,
+          description,
+          telegramChatId,
+          scheduledAt,
+        }),
+      });
+    
+      const responseBody = await response.text();
+      console.log('Webhook Response:', response.status, responseBody);
+    
+      if (!response.ok) {
+        throw new Error(`Webhook call failed with status: ${response.status}, body: ${responseBody}`);
+      }
+    } catch (error) {
+      console.error('Error sending data to webhook:', error);
+    }
+    
+    
+    
 
     return NextResponse.json({ 
       ...newTask, 

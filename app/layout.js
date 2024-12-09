@@ -11,6 +11,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        {/* Add the Telegram Web App script */}
+        <script
+          src="https://telegram.org/js/telegram-web-app.js"
+          async
+        ></script>
+      </head>
       <body>
         <TelegramProvider>
           <Navbar />
