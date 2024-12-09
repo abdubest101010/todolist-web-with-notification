@@ -1,1 +1,10 @@
-{}
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/tasks/[id]/route": "app/api/tasks/[id]/route.js",
+  "/add-task/page": "app/add-task/page.js",
+  "/api/tasks/route": "app/api/tasks/route.js",
+  "/update-task/[id]/page": "app/update-task/[id]/page.js",
+  "/page": "app/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/api/telegram/route": "app/api/telegram/route.js"
+}
