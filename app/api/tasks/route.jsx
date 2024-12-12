@@ -64,8 +64,6 @@ export async function POST(request) {
 
     const cronhookPayload = {
       title, // Title of the webhook schedule
-      telegramChatId,
-      description,
       url: process.env.MAKE_WEBHOOK_URL, // Webhook URL to trigger
       timezone: 'UTC', // IANA Timezone, e.g., UTC
       method: 'POST', // HTTP Method
@@ -74,6 +72,13 @@ export async function POST(request) {
       runAt: new Date(scheduledAt).toISOString(), // Scheduled time in ISO format
       sendCronhookObject: true, // Include Cronhook metadata
       sendFailureAlert: true, // Send failure alerts
+      body: JSON.stringify({
+        telegramChatId, // Include custom data here
+        description,
+        title,
+        username,
+        scheduledAt: new Date(scheduledAt).toISOString(),
+      }),
     };
 
     const response = await fetch(cronhookApiUrl, {
