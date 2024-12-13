@@ -56,18 +56,7 @@ const handleSubmit = async (e) => {
 };
 
 
-      if (response.ok) {
-        router.push("/"); 
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || response.statusText);
-      }
-    } catch (error) {
-      setError("Error adding task: " + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+     
 
   return (
     <div className="p-4 max-w-lg mx-auto sm:max-w-md">
