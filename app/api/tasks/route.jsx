@@ -32,12 +32,24 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { title, description, scheduledAt, username, telegramChatId } = await request.json();
+    const {
+      title,
+      description,
+      scheduledAt,
+      localOffsetMinutes,
+      username,
+      telegramChatId,
+    } = await request.json();
 
-    if (!username || !title || !scheduledAt || !telegramChatId) {
-      return NextResponse.json({ error: 'Title, scheduledAt, username, and telegramChatId are required' }, { status: 400 });
+    // Validate input
+    if (!title || !scheduledAt || !username || !telegramChatId) {
+      return NextResponse.json(
+        { error: 'Title, scheduledAt, username, and telegramChatId are required' },
+        { status: 400 }
+      );
     }
 
+    // Check if user exists
     const user = await prisma.user.findUnique({
       where: { username },
     });
@@ -46,12 +58,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Adjust scheduledAt to UTC based on the local offset
+    const scheduledDateUTC = new Date(
+      new Date(scheduledAt).getTime() - localOffsetMinutes * 60 * 1000
+    );
+
+    // Create the task in the database
     const newTask = await prisma.task.create({
       data: {
         title,
         description,
         createdAt: new Date(),
-        scheduledAt: new Date(scheduledAt),
+        scheduledAt: scheduledDateUTC, // Store the adjusted UTC time
         userId: user.id,
         telegramChatId,
       },
@@ -59,29 +77,29 @@ export async function POST(request) {
 
     console.log('New Task Created:', newTask);
 
+    // Optionally, trigger an external Cronhook to schedule a webhook
     const cronhookApiUrl = 'https://api.cronhooks.io/schedules';
     const token = process.env.CRONHOOKS_API_TOKEN; // Ensure this is set in your .env file
 
-const cronhookPayload = {
-  title, // Title of the webhook schedule
-  description, // Description of the webhook schedule
-  url: process.env.MAKE_WEBHOOK_URL, // Webhook URL to trigger
-  timezone: 'UTC', // IANA Timezone
-  method: 'POST', // HTTP Method
-  contentType: 'application/json', // Content type of the webhook
-  isRecurring: false, // Non-recurring schedule
-  runAt: new Date(scheduledAt).toISOString(), // Scheduled time in ISO format
-  sendCronhookObject: true, // Include Cronhook metadata
-  sendFailureAlert: true, // Send failure alerts
-  payload: {
-    telegramChatId, // Custom data
-    description,
-    title,
-    username,
-    scheduledAt: new Date(scheduledAt).toISOString(),
-  },
-};
-
+    const cronhookPayload = {
+      title, // Title of the webhook schedule
+      description, // Description of the webhook schedule
+      url: process.env.MAKE_WEBHOOK_URL, // Webhook URL to trigger
+      timezone: 'UTC', // IANA Timezone
+      method: 'POST', // HTTP Method
+      contentType: 'application/json', // Content type of the webhook
+      isRecurring: false, // Non-recurring schedule
+      runAt: scheduledDateUTC.toISOString(), // Scheduled time in ISO format
+      sendCronhookObject: true, // Include Cronhook metadata
+      sendFailureAlert: true, // Send failure alerts
+      payload: {
+        telegramChatId, // Custom data
+        description,
+        title,
+        username,
+        scheduledAt: scheduledDateUTC.toISOString(),
+      },
+    };
 
     const response = await fetch(cronhookApiUrl, {
       method: 'POST',
@@ -101,10 +119,13 @@ const cronhookPayload = {
     const cronhookResponse = await response.json();
     console.log('Cronhook Response:', cronhookResponse);
 
-    return NextResponse.json({
-      ...newTask,
-      cronhookScheduleId: cronhookResponse.id, // Return the Cronhook schedule ID for reference
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        ...newTask,
+        cronhookScheduleId: cronhookResponse.id, // Return the Cronhook schedule ID for reference
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Internal Server Error in POST:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
