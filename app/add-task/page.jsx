@@ -13,47 +13,50 @@ const AddTaskPage = () => {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-    if (!username || !telegramChatId) {
-      setError("Username or Telegram Chat ID is not set");
-      setLoading(false);
-      return;
+  if (!username || !telegramChatId) {
+    setError("Username or Telegram Chat ID is not set");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    // Convert the local time to UTC
+    const scheduledAtUTC = new Date(scheduledAt).toISOString();
+
+    const response = await fetch("/api/tasks", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        description,
+        scheduledAt: scheduledAtUTC, // Send the UTC time
+        username,
+        telegramChatId,
+      }),
+    });
+
+    if (response.ok) {
+      router.push("/");
+    } else {
+      const errorData = await response.json();
+      setError(errorData.error || response.statusText);
     }
+  } catch (error) {
+    setError("Error adding task: " + error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
-    const localOffsetMinutes = new Date().getTimezoneOffset(); // Capture user's timezone offset in minutes
 
-    try {
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          scheduledAt,
-          username,
-          telegramChatId,
-          localOffsetMinutes, // Send offset to the server
-        }),
-      });
-
-      if (response.ok) {
-        router.push("/");
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || response.statusText);
-      }
-    } catch (error) {
-      setError("Error adding task: " + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+     
 
   return (
     <div className="p-4 max-w-lg mx-auto sm:max-w-md">
@@ -105,7 +108,11 @@ const AddTaskPage = () => {
             required
           />
         </div>
-        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {error && (
+          <div className="text-red-500 mb-4">
+            {error}
+          </div>
+        )}
         <button
           type="submit"
           className="bg-blue-500 text-white px-4 py-2 rounded w-full hover:bg-blue-600 transition-colors duration-300"
