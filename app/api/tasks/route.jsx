@@ -62,17 +62,25 @@ export async function POST(request) {
     const cronhookApiUrl = 'https://api.cronhooks.io/schedules';
     const token = process.env.CRONHOOKS_API_TOKEN; // Ensure this is set in your .env file
 
-    const cronhookPayload = {
-      title, // Title of the webhook schedule
-      url: process.env.MAKE_WEBHOOK_URL, // Webhook URL to trigger
-      timezone: 'UTC', // IANA Timezone, e.g., UTC
-      method: 'POST', // HTTP Method
-      contentType: 'application/json', // Content type of the webhook
-      isRecurring: false, // Non-recurring schedule
-      runAt: new Date(scheduledAt).toISOString(), // Scheduled time in ISO format
-      sendCronhookObject: true, // Include Cronhook metadata
-      sendFailureAlert: true, // Send failure alerts
-    };
+  const cronhookPayload = {
+  title, // Title of the webhook schedule
+  description, // Description of the webhook schedule
+  url: process.env.MAKE_WEBHOOK_URL, // Webhook URL to trigger
+  timezone: 'UTC', // IANA Timezone
+  method: 'POST', // HTTP Method
+  contentType: 'application/json', // Content type of the webhook
+  isRecurring: false, // Non-recurring schedule
+  runAt: new Date(scheduledAt).toISOString(), // Scheduled time in ISO format
+  sendCronhookObject: true, // Include Cronhook metadata
+  sendFailureAlert: true, // Send failure alerts
+  payload: {
+    telegramChatId, // Custom data
+    description,
+    title,
+    username,
+    scheduledAt: new Date(scheduledAt).toISOString(),
+  },
+};
 
     const response = await fetch(cronhookApiUrl, {
       method: 'POST',
