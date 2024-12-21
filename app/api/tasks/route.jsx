@@ -53,58 +53,49 @@ export async function POST(request) {
         createdAt: new Date(),
         scheduledAt: new Date(scheduledAt),
         userId: user.id,
-        telegramChatId, // Use the telegramChatId from the request
+        telegramChatId,
       },
     });
-     console.log(newTask)
-     const scheduledTime = new Date(scheduledAt).getTime();
-     const currentTime = new Date().getTime();
-     console.log(scheduledTime, "sch")
-     console.log(currentTime)
-   
-     console.log('New Task Created:', newTask);
 
-     const cronhookApiUrl = 'https://api.cronhooks.io/schedules';
-     const token = process.env.CRONHOOKS_API_TOKEN; // Ensure this is set in your .env file
- 
-     const cronhookPayload = {
-       title, // Title of the webhook schedule
-       url: process.env.MAKE_WEBHOOK_URL, // Webhook URL to trigger
-       timezone: 'UTC', // IANA Timezone, e.g., UTC
-       method: 'POST', // HTTP Method
-       contentType: 'application/json', // Content type of the webhook
-       isRecurring: false, // Non-recurring schedule
-       runAt: new Date(scheduledAt).toISOString(), // Scheduled time in ISO format
-       sendCronhookObject: true, // Include Cronhook metadata
-       sendFailureAlert: true, // Send failure alerts
-     };
- 
-     const response = await fetch(cronhookApiUrl, {
-       method: 'POST',
-       headers: {
-         'Content-Type': 'application/json',
-         Authorization: `Bearer ${token}`,
-       },
-       body: JSON.stringify(cronhookPayload),
-     });
- 
-     if (!response.ok) {
-       const errorText = await response.text();
-       console.error('Cronhook API Error:', response.status, errorText);
-       throw new Error(`Failed to schedule webhook: ${response.status} - ${errorText}`);
-     }
- 
-     const cronhookResponse = await response.json();
-     console.log('Cronhook Response:', cronhookResponse);
-    
-    
-    
+    console.log('New Task Created:', newTask);
 
-    return NextResponse.json({ 
-      ...newTask, 
-      telegramChatId 
+    const cronhookApiUrl = 'https://api.cronhooks.io/schedules';
+    const token = process.env.CRONHOOKS_API_TOKEN; // Ensure this is set in your .env file
+
+    const cronhookPayload = {
+      title, // Title of the webhook schedule
+      url: process.env.MAKE_WEBHOOK_URL, // Webhook URL to trigger
+      timezone: 'UTC', // IANA Timezone, e.g., UTC
+      method: 'POST', // HTTP Method
+      contentType: 'application/json', // Content type of the webhook
+      isRecurring: false, // Non-recurring schedule
+      runAt: new Date(scheduledAt).toISOString(), // Scheduled time in ISO format
+      sendCronhookObject: true, // Include Cronhook metadata
+      sendFailureAlert: true, // Send failure alerts
+    };
+
+    const response = await fetch(cronhookApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(cronhookPayload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Cronhook API Error:', response.status, errorText);
+      throw new Error(`Failed to schedule webhook: ${response.status} - ${errorText}`);
+    }
+
+    const cronhookResponse = await response.json();
+    console.log('Cronhook Response:', cronhookResponse);
+
+    return NextResponse.json({
+      ...newTask,
+      cronhookScheduleId: cronhookResponse.id, // Return the Cronhook schedule ID for reference
     }, { status: 201 });
-    
   } catch (error) {
     console.error('Internal Server Error in POST:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
