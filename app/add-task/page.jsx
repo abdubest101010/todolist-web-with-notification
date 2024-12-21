@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTelegram } from "@/lib/TelegramProvider";
 
@@ -11,13 +11,20 @@ const AddTaskPage = () => {
   const [scheduledAt, setScheduledAt] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [localOffsetMinutes, setLocalOffsetMinutes] = useState(0);
+  const [timerSetting, setTimerSetting] = useState('');
+  const [utcTime, setUtcTime] = useState('');
+  const [userTime, setUserTime] = useState('');
   const router = useRouter();
 
-  useEffect(() => {
-    const offset = new Date().getTimezoneOffset(); // Time zone offset in minutes
-    setLocalOffsetMinutes(offset);
-  }, []);
+  const handleTimerChange = (event) => {
+    const localTime = event.target.value;
+    setTimerSetting(localTime);
+
+    // Convert local time to UTC
+    const date = new Date(localTime);
+    const utcDate = new Date(date.toUTCString());
+    setUtcTime(utcDate.toISOString());
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +38,9 @@ const AddTaskPage = () => {
     }
 
     try {
+      // Convert the local time to UTC
+      const scheduledAtUTC = new Date(scheduledAt).toISOString();
+
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: {
@@ -39,14 +49,18 @@ const AddTaskPage = () => {
         body: JSON.stringify({
           title,
           description,
-          scheduledAt,
-          localOffsetMinutes, // Send offset
+          scheduledAt: scheduledAtUTC, // Send the UTC time
           username,
           telegramChatId,
+          timerSetting: utcTime
         }),
       });
 
       if (response.ok) {
+        const responseData = await response.json();
+        const scheduledUtcTime = new Date(responseData.scheduledAt);
+        const localTime = new Date(scheduledUtcTime.toLocaleString());
+        setUserTime(localTime.toISOString());
         router.push("/");
       } else {
         const errorData = await response.json();
@@ -109,7 +123,23 @@ const AddTaskPage = () => {
             required
           />
         </div>
-        {error && <div className="text-red-500 mb-4">{error}</div>}
+        <div>
+          <label htmlFor="timer" className="block text-sm font-medium mb-2">
+            Timer Setting
+          </label>
+          <input
+            type="datetime-local"
+            id="timer"
+            value={timerSetting}
+            onChange={handleTimerChange}
+            className="block w-full border-gray-300 rounded-md shadow-sm"
+          />
+        </div>
+        {error && (
+          <div className="text-red-500 mb-4">
+            {error}
+          </div>
+        )}
         <button
           type="submit"
           className="bg-blue-500 text-white px-4 py-2 rounded w-full hover:bg-blue-600 transition-colors duration-300"
@@ -118,6 +148,11 @@ const AddTaskPage = () => {
           {loading ? "Adding..." : "Add Task"}
         </button>
       </form>
+      {userTime && (
+        <div className="mt-4">
+          <p>Scheduled Time (Local): {userTime}</p>
+        </div>
+      )}
     </div>
   );
 };
