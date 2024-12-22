@@ -23,19 +23,14 @@ export async function GET(request) {
       orderBy: { scheduledAt: 'asc' },
     });
 
-    // Convert scheduledAt to user's time
-    const tasksWithUserTime = tasks.map((task) => {
-      const utcDate = new Date(task.scheduledAt);
-      const userTime = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000); // Adjust to local user time
-      return { ...task, scheduledAt: userTime.toISOString() };
-    });
-
-    return NextResponse.json(tasksWithUserTime);
+    // Return tasks as-is (user time is already stored)
+    return NextResponse.json(tasks);
   } catch (error) {
     console.error('Internal Server Error in GET:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
 
 
 export async function POST(request) {
@@ -54,18 +49,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Parse scheduledAt as UTC
-    const utcScheduledAt = new Date(scheduledAt);
+    // Use the user's time directly for the database
+    const userScheduledAt = new Date(scheduledAt);
 
-    // Convert UTC time to user time for payload
-    const userScheduledAt = new Date(utcScheduledAt.getTime() - utcScheduledAt.getTimezoneOffset() * 60000);
+    // Convert user's time to UTC for the webhook
+    const utcScheduledAt = new Date(userScheduledAt.getTime() + userScheduledAt.getTimezoneOffset() * 60000);
 
     const newTask = await prisma.task.create({
       data: {
         title,
         description,
         createdAt: new Date(),
-        scheduledAt: utcScheduledAt,
+        scheduledAt: userScheduledAt, // Store user-provided time directly
         userId: user.id,
         telegramChatId,
       },
@@ -89,7 +84,7 @@ export async function POST(request) {
         description,
         title,
         username,
-        scheduledAt: userScheduledAt.toISOString(), // User time in payload
+        scheduledAt: userScheduledAt.toISOString(), // User's time in payload
       },
     };
 
@@ -120,5 +115,6 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
 
 
