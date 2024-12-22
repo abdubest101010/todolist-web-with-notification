@@ -12,7 +12,7 @@ const HomePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-  const fetchTasks = async () => {
+ const fetchTasks = async () => {
   if (!username) return;
 
   try {
@@ -20,13 +20,8 @@ const HomePage = () => {
     if (response.ok) {
       const data = await response.json();
 
-      // Convert ISO time strings to Date objects for display
-      const userTasks = data.map((task) => ({
-        ...task,
-        scheduledAt: new Date(task.scheduledAt).toLocaleString(),
-      }));
-
-      setTasks(userTasks);
+      // No need for conversion as the time is already in the user's time zone
+      setTasks(data);
     } else {
       console.error('Error fetching tasks:', response.statusText);
     }
@@ -36,6 +31,7 @@ const HomePage = () => {
     setLoading(false);
   }
 };
+
     fetchTasks();
   }, [username]);
 
