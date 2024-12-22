@@ -12,30 +12,32 @@ const HomePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      if (!username) return;
+   const fetchTasks = async () => {
+  if (!username) return;
 
-      try {
-        const response = await fetch(`/api/tasks?username=${username}`);
-        if (response.ok) {
-          const data = await response.json();
+  try {
+    const response = await fetch(`/api/tasks?username=${username}`);
+    if (response.ok) {
+      const data = await response.json();
 
-          // Convert `scheduledAt` to local time before setting state
-          const localTasks = data.map((task) => ({
-            ...task,
-            scheduledAt: new Date(task.scheduledAt).toLocaleString(), // Convert to local time
-          }));
+      // Convert `scheduledAt` to user-specific time
+      const userTasks = data.map((task) => {
+        const utcDate = new Date(task.scheduledAt);
+        const userTime = new Date(utcDate.getTime() - task.timezoneOffset * 60000); // Adjust to user time
+        return { ...task, scheduledAt: userTime.toLocaleString() };
+      });
 
-          setTasks(localTasks);
-        } else {
-          console.error("Error fetching tasks:", response.statusText);
-        }
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setTasks(userTasks);
+    } else {
+      console.error("Error fetching tasks:", response.statusText);
+    }
+  } catch (error) {
+    console.error("Error fetching tasks:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     fetchTasks();
   }, [username]);
