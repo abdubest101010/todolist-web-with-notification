@@ -13,48 +13,51 @@ const AddTaskPage = () => {
   const [error, setError] = useState("");
   const router = useRouter();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  if (!username || !telegramChatId) {
-    setError("Username or Telegram Chat ID is not set");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    const localScheduledAt = new Date(scheduledAt);
-    const utcScheduledAt = new Date(localScheduledAt.getTime() + localScheduledAt.getTimezoneOffset() * 60000);
-
-    const response = await fetch("/api/tasks", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title,
-        description,
-        scheduledAt: utcScheduledAt.toISOString(),
-        username,
-        telegramChatId,
-      }),
-    });
-
-    if (response.ok) {
-      router.push("/");
-    } else {
-      const errorData = await response.json();
-      setError(errorData.error || response.statusText);
+    if (!username || !telegramChatId) {
+      setError("Username or Telegram Chat ID is not set");
+      setLoading(false);
+      return;
     }
-  } catch (error) {
-    setError("Error adding task: " + error.message);
-  } finally {
-    setLoading(false);
-  }
-};
 
+    try {
+      const localScheduledAt = new Date(scheduledAt);
+      const utcScheduledAt = new Date(localScheduledAt.getTime() + localScheduledAt.getTimezoneOffset() * 60000);
+
+      // Get user's timezone offset
+      const userTimezoneOffset = -localScheduledAt.getTimezoneOffset();
+
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          scheduledAt: utcScheduledAt.toISOString(),
+          username,
+          telegramChatId,
+          timezoneOffset: userTimezoneOffset, // Pass timezone offset
+        }),
+      });
+
+      if (response.ok) {
+        router.push("/");
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || response.statusText);
+      }
+    } catch (error) {
+      setError("Error adding task: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="p-4 max-w-lg mx-auto sm:max-w-md">
@@ -76,10 +79,7 @@ const handleSubmit = async (e) => {
           />
         </div>
         <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium mb-2"
-          >
+          <label htmlFor="description" className="block text-sm font-medium mb-2">
             Description
           </label>
           <textarea
@@ -91,10 +91,7 @@ const handleSubmit = async (e) => {
           />
         </div>
         <div>
-          <label
-            htmlFor="scheduledAt"
-            className="block text-sm font-medium mb-2"
-          >
+          <label htmlFor="scheduledAt" className="block text-sm font-medium mb-2">
             Scheduled At
           </label>
           <input
