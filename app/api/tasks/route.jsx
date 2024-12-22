@@ -32,10 +32,10 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { title, description, scheduledAt, username, telegramChatId } = await request.json();
+    const { title, description, scheduledAt, username, telegramChatId, timezoneOffset } = await request.json();
 
     if (!username || !title || !scheduledAt || !telegramChatId) {
-      return NextResponse.json({ error: 'Title, scheduledAt, username, and telegramChatId are required' }, { status: 400 });
+      return NextResponse.json({ error: "Title, scheduledAt, username, and telegramChatId are required" }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -43,38 +43,34 @@ export async function POST(request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Parse scheduledAt as a UTC date
+    // Parse scheduledAt as a UTC date and adjust based on timezoneOffset
     const utcScheduledAt = new Date(scheduledAt);
-
-    // Convert UTC time to local time (for the payload)
-    const localScheduledAt = new Date(utcScheduledAt.getTime() - utcScheduledAt.getTimezoneOffset() * 60000);
+    const userScheduledAt = new Date(utcScheduledAt.getTime() - timezoneOffset * 60000); // Adjust back to user time
 
     const newTask = await prisma.task.create({
       data: {
         title,
         description,
         createdAt: new Date(),
-        scheduledAt: utcScheduledAt,
+        scheduledAt: utcScheduledAt, // Stored in UTC
         userId: user.id,
         telegramChatId,
       },
     });
 
-    console.log('New Task Created:', newTask);
-
-    // Schedule the webhook using UTC time for `runAt` but local time for payload
+    // Schedule the webhook using UTC time
     const cronhookPayload = {
       title,
       description,
       url: process.env.MAKE_WEBHOOK_URL,
-      timezone: 'UTC',
-      method: 'POST',
-      contentType: 'application/json',
+      timezone: "UTC",
+      method: "POST",
+      contentType: "application/json",
       isRecurring: false,
-      runAt: utcScheduledAt.toISOString(), // UTC time for Cronhook
+      runAt: utcScheduledAt.toISOString(), // UTC time for webhook
       sendCronhookObject: true,
       sendFailureAlert: true,
       payload: {
@@ -82,14 +78,14 @@ export async function POST(request) {
         description,
         title,
         username,
-        scheduledAt: localScheduledAt.toISOString(), // Local time for the payload
+        scheduledAt: userScheduledAt.toISOString(), // User time in payload
       },
     };
 
-    const response = await fetch('https://api.cronhooks.io/schedules', {
-      method: 'POST',
+    const response = await fetch("https://api.cronhooks.io/schedules", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.CRONHOOKS_API_TOKEN}`,
       },
       body: JSON.stringify(cronhookPayload),
@@ -97,19 +93,15 @@ export async function POST(request) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Cronhook API Error:', response.status, errorText);
+      console.error("Cronhook API Error:", response.status, errorText);
       throw new Error(`Failed to schedule webhook: ${response.status} - ${errorText}`);
     }
 
     const cronhookResponse = await response.json();
-    console.log('Cronhook Response:', cronhookResponse);
 
-    return NextResponse.json({
-      ...newTask,
-      cronhookScheduleId: cronhookResponse.id,
-    }, { status: 201 });
+    return NextResponse.json({ ...newTask, cronhookScheduleId: cronhookResponse.id }, { status: 201 });
   } catch (error) {
-    console.error('Internal Server Error in POST:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Internal Server Error in POST:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
