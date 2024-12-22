@@ -12,7 +12,7 @@ const HomePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-   const fetchTasks = async () => {
+  const fetchTasks = async () => {
   if (!username) return;
 
   try {
@@ -20,25 +20,22 @@ const HomePage = () => {
     if (response.ok) {
       const data = await response.json();
 
-      // Convert `scheduledAt` to user-specific time
-      const userTasks = data.map((task) => {
-        const utcDate = new Date(task.scheduledAt);
-        const userTime = new Date(utcDate.getTime() - task.timezoneOffset * 60000); // Adjust to user time
-        return { ...task, scheduledAt: userTime.toLocaleString() };
-      });
+      // Convert ISO time strings to Date objects for display
+      const userTasks = data.map((task) => ({
+        ...task,
+        scheduledAt: new Date(task.scheduledAt).toLocaleString(),
+      }));
 
       setTasks(userTasks);
     } else {
-      console.error("Error fetching tasks:", response.statusText);
+      console.error('Error fetching tasks:', response.statusText);
     }
   } catch (error) {
-    console.error("Error fetching tasks:", error);
+    console.error('Error fetching tasks:', error);
   } finally {
     setLoading(false);
   }
 };
-
-
     fetchTasks();
   }, [username]);
 
