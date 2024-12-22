@@ -49,6 +49,9 @@ export async function POST(request) {
     // Parse scheduledAt as a UTC date
     const utcScheduledAt = new Date(scheduledAt);
 
+    // Convert UTC time to local time (for the payload)
+    const localScheduledAt = new Date(utcScheduledAt.getTime() - utcScheduledAt.getTimezoneOffset() * 60000);
+
     const newTask = await prisma.task.create({
       data: {
         title,
@@ -62,7 +65,7 @@ export async function POST(request) {
 
     console.log('New Task Created:', newTask);
 
-    // Schedule the webhook using UTC time
+    // Schedule the webhook using UTC time for `runAt` but local time for payload
     const cronhookPayload = {
       title,
       description,
@@ -71,7 +74,7 @@ export async function POST(request) {
       method: 'POST',
       contentType: 'application/json',
       isRecurring: false,
-      runAt: utcScheduledAt.toISOString(),
+      runAt: utcScheduledAt.toISOString(), // UTC time for Cronhook
       sendCronhookObject: true,
       sendFailureAlert: true,
       payload: {
@@ -79,7 +82,7 @@ export async function POST(request) {
         description,
         title,
         username,
-        scheduledAt: utcScheduledAt.toISOString(),
+        scheduledAt: localScheduledAt.toISOString(), // Local time for the payload
       },
     };
 
