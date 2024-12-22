@@ -46,12 +46,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Parse scheduledAt as a UTC date
+    const utcScheduledAt = new Date(scheduledAt);
+
     const newTask = await prisma.task.create({
       data: {
         title,
         description,
         createdAt: new Date(),
-        scheduledAt: new Date(scheduledAt),
+        scheduledAt: utcScheduledAt,
         userId: user.id,
         telegramChatId,
       },
@@ -59,34 +62,32 @@ export async function POST(request) {
 
     console.log('New Task Created:', newTask);
 
-    const cronhookApiUrl = 'https://api.cronhooks.io/schedules';
-    const token = process.env.CRONHOOKS_API_TOKEN; // Ensure this is set in your .env file
+    // Schedule the webhook using UTC time
+    const cronhookPayload = {
+      title,
+      description,
+      url: process.env.MAKE_WEBHOOK_URL,
+      timezone: 'UTC',
+      method: 'POST',
+      contentType: 'application/json',
+      isRecurring: false,
+      runAt: utcScheduledAt.toISOString(),
+      sendCronhookObject: true,
+      sendFailureAlert: true,
+      payload: {
+        telegramChatId,
+        description,
+        title,
+        username,
+        scheduledAt: utcScheduledAt.toISOString(),
+      },
+    };
 
-  const cronhookPayload = {
-  title, // Title of the webhook schedule
-  description, // Description of the webhook schedule
-  url: process.env.MAKE_WEBHOOK_URL, // Webhook URL to trigger
-  timezone: 'UTC', // IANA Timezone
-  method: 'POST', // HTTP Method
-  contentType: 'application/json', // Content type of the webhook
-  isRecurring: false, // Non-recurring schedule
-  runAt: new Date(scheduledAt).toISOString(), // Scheduled time in ISO format
-  sendCronhookObject: true, // Include Cronhook metadata
-  sendFailureAlert: true, // Send failure alerts
-  payload: {
-    telegramChatId, // Custom data
-    description,
-    title,
-    username,
-    scheduledAt: new Date(scheduledAt).toISOString(),
-  },
-};
-
-    const response = await fetch(cronhookApiUrl, {
+    const response = await fetch('https://api.cronhooks.io/schedules', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${process.env.CRONHOOKS_API_TOKEN}`,
       },
       body: JSON.stringify(cronhookPayload),
     });
@@ -102,7 +103,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       ...newTask,
-      cronhookScheduleId: cronhookResponse.id, // Return the Cronhook schedule ID for reference
+      cronhookScheduleId: cronhookResponse.id,
     }, { status: 201 });
   } catch (error) {
     console.error('Internal Server Error in POST:', error);
